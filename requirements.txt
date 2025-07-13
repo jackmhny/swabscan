@@ -1,0 +1,8 @@
+insightface
+onnxruntime
+opencv-python-headless
+qdrant-client[grpc]
+streamlit
+pillow
+numpy
+
