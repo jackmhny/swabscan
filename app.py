@@ -7,12 +7,15 @@ import streamlit as st
 from PIL import Image
 from qdrant_client import QdrantClient
 import numpy as np
+import zipfile
 
 # ── Config ───────────────────────────────────────────────────────────
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://127.0.0.1:6333")
 COLLECTION = "fb_faces"
 THUMB_COLS = 12
 K_LIMIT    = 144  # max faces per query
+INPUT_DIR   = "/app/input"
+OUTPUT_DIR  = "/app/output"
 
 # ── Init Qdrant & Face model ─────────────────────────────────────────
 @st.cache_resource
@@ -23,18 +26,6 @@ def init_models():
     return client, model
 
 client, model = init_models()
-
-# ── Custom CSS ────────────────────────────────────────────────────────
-st.markdown("""
-<style>
-  .stApp { background-color:#1E1E1E; color:#E0E0E0; }
-  .stSidebar { background-color:#252526; }
-  .stButton>button { border:2px solid #4CAF50; border-radius:10px;
-    color:#FFF; background:#4CAF50; padding:10px 24px; transition:0.3s; }
-  .stButton>button:hover { background:#FFF; color:#4CAF50; }
-  .stImage>img { border-radius:10px; box-shadow:0 4px 8px rgba(0,0,0,0.2); }
-  .block-container { max-width:100% !important; }
-</style>""", unsafe_allow_html=True)
 
 # ── UI setup ─────────────────────────────────────────────────────────
 st.set_page_config(layout="wide")
@@ -87,7 +78,7 @@ for idx, pt in enumerate(points):
     if not host_fp:
         continue
     fname = os.path.basename(host_fp)
-    fp    = os.path.join("/app/input", fname)
+    fp    = os.path.join(INPUT_DIR, fname)
     if not os.path.exists(fp):
         continue
     img = cv2.imread(fp)
@@ -103,17 +94,34 @@ for idx, pt in enumerate(points):
         key = f"chk_{pt.id}"
         if st.checkbox(label=key, key=key, label_visibility="hidden",
                        value=st.session_state.select_all):
-            selected.append(pt)
+            selected.append((host_fp, fname))
 
-# ── Export ───────────────────────────────────────────────────────────
+# ── Export & Download ZIP ────────────────────────────────────────────
 st.sidebar.markdown("---")
 st.sidebar.header("Export")
 st.sidebar.write(f"Selected {len(selected)} photos.")
-if st.sidebar.button("Export Selected Photos"):
-    outdir = "hits_streamlit"
-    os.makedirs(outdir, exist_ok=True)
-    for pt in selected:
-        src = pt.payload["file"]
-        shutil.copy2(src, os.path.join(outdir, os.path.basename(src)))
-    st.sidebar.success(f"Copied {len(selected)} photos to '{outdir}'")
 
+if st.sidebar.button("Prepare Download"):
+    # Ensure output directory exists
+    hits_dir = os.path.join(OUTPUT_DIR, "hits_streamlit")
+    os.makedirs(hits_dir, exist_ok=True)
+
+    # Copy selected into hits_dir
+    for host_fp, fname in selected:
+        container_fp = os.path.join(INPUT_DIR, fname)
+        shutil.copy2(container_fp, os.path.join(hits_dir, fname))
+
+    # Create ZIP archive
+    zip_path = os.path.join(OUTPUT_DIR, "hits_streamlit.zip")
+    with zipfile.ZipFile(zip_path, "w") as zp:
+        for fn in os.listdir(hits_dir):
+            zp.write(os.path.join(hits_dir, fn), arcname=fn)
+
+    # Serve download button
+    with open(zip_path, "rb") as f:
+        st.sidebar.download_button(
+            label="Download ZIP of selected photos",
+            data=f,
+            file_name="hits_streamlit.zip",
+            mime="application/zip"
+        )
