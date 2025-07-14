@@ -12,10 +12,11 @@ import zipfile
 # ── Config ───────────────────────────────────────────────────────────
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://127.0.0.1:6333")
 COLLECTION = "fb_faces"
-THUMB_COLS = 12
+THUMB_COLS = 8  # max columns
 K_LIMIT    = 144  # max faces per query
 INPUT_DIR   = "/app/input"
 OUTPUT_DIR  = "/app/output"
+GRAHAM_PIC = "graham.png"
 
 # ── Init Qdrant & Face model ─────────────────────────────────────────
 @st.cache_resource
@@ -32,9 +33,20 @@ st.set_page_config(layout="wide")
 st.title("Find a Person")
 
 # ── Sidebar: refs, threshold, select-all ─────────────────────────────
-refs = st.sidebar.file_uploader(
-    label="Upload 1–2 reference images", type=["jpg","png"], accept_multiple_files=True
+st.sidebar.markdown("### Reference Image")
+use_graham = st.sidebar.button("Use Graham's Pic")
+uploaded_refs = st.sidebar.file_uploader(
+    label="Or upload your own", type=["jpg","png"], accept_multiple_files=True
 )
+refs = []
+if use_graham:
+    if os.path.exists(GRAHAM_PIC):
+        refs = [GRAHAM_PIC]
+    else:
+        st.sidebar.warning(f"`{GRAHAM_PIC}` not found!")
+elif uploaded_refs:
+    refs = uploaded_refs
+
 threshold = st.sidebar.slider("Similarity threshold", 0.0, 1.0, 0.35, 0.01)
 
 if 'select_all' not in st.session_state:
@@ -47,10 +59,11 @@ points = []
 if refs:
     ref_vecs = []
     for ref in refs:
+        ref_name = ref if isinstance(ref, str) else ref.name
         img = np.array(Image.open(ref).convert("RGB"))
         faces = model.get(img)
         if not faces:
-            st.sidebar.warning(f"No face in {ref.name}")
+            st.sidebar.warning(f"No face in {os.path.basename(ref_name)}")
             continue
         ref_vecs.append(faces[0].normed_embedding.astype("float32"))
     if ref_vecs:
@@ -87,12 +100,12 @@ for idx, pt in enumerate(points):
     face = img[y0:y1, x0:x1]
     if face is None or face.size==0: continue
     face  = cv2.cvtColor(face, cv2.COLOR_BGR2RGB)
-    thumb = Image.fromarray(face).resize((100,100))
+    thumb = Image.fromarray(face).resize((200,200))
     col   = cols[idx % THUMB_COLS]
     with col:
         st.image(thumb, use_container_width=True)
         key = f"chk_{pt.id}"
-        if st.checkbox(label=key, key=key, label_visibility="hidden",
+        if st.checkbox(label=key, key=key,
                        value=st.session_state.select_all):
             selected.append((host_fp, fname))
 
@@ -103,7 +116,7 @@ st.sidebar.write(f"Selected {len(selected)} photos.")
 
 if st.sidebar.button("Prepare Download"):
     # Ensure output directory exists
-    hits_dir = os.path.join(OUTPUT_DIR, "hits_streamlit")
+    hits_dir = os.path.join(OUTPUT_DIR, "swabscan")
     os.makedirs(hits_dir, exist_ok=True)
 
     # Copy selected into hits_dir
@@ -112,7 +125,7 @@ if st.sidebar.button("Prepare Download"):
         shutil.copy2(container_fp, os.path.join(hits_dir, fname))
 
     # Create ZIP archive
-    zip_path = os.path.join(OUTPUT_DIR, "hits_streamlit.zip")
+    zip_path = os.path.join(OUTPUT_DIR, "swabscan.zip")
     with zipfile.ZipFile(zip_path, "w") as zp:
         for fn in os.listdir(hits_dir):
             zp.write(os.path.join(hits_dir, fn), arcname=fn)
@@ -122,6 +135,7 @@ if st.sidebar.button("Prepare Download"):
         st.sidebar.download_button(
             label="Download ZIP of selected photos",
             data=f,
-            file_name="hits_streamlit.zip",
+            file_name="swabscan.zip",
             mime="application/zip"
         )
+
