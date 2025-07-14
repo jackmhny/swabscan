@@ -80,10 +80,18 @@ else:
 cols = st.columns(THUMB_COLS)
 selected = []
 for idx, pt in enumerate(points):
-    p = pt.payload or {}
-    fp = p.get("file"); bbox = p.get("bbox",[0,0,0,0])
-    if not fp or not os.path.exists(fp): continue
-    img     = cv2.imread(fp); h,w = img.shape[:2]
+    p       = pt.payload or {}
+    host_fp = p.get("file")
+    bbox    = p.get("bbox",[0,0,0,0])
+    # map stored path to container mount
+    if not host_fp:
+        continue
+    fname = os.path.basename(host_fp)
+    fp    = os.path.join("/app/input", fname)
+    if not os.path.exists(fp):
+        continue
+    img = cv2.imread(fp)
+    h, w = img.shape[:2]
     x0,y0,x1,y1 = (max(0,bbox[0]),max(0,bbox[1]),min(w,bbox[2]),min(h,bbox[3]))
     face = img[y0:y1, x0:x1]
     if face is None or face.size==0: continue
