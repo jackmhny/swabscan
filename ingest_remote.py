@@ -1,5 +1,6 @@
 # script to be ran on workstation with GPU to ingest to qdrant on remote server
 import glob, cv2, numpy as np, insightface
+import os
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import VectorParams, PointStruct, Distance
 
