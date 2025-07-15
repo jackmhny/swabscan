@@ -15,6 +15,7 @@ THUMB_COLS = 4 # Fewer columns = bigger images
 PADDING_FACTOR = 0.5 # Add 50% padding around the face bbox
 INPUT_DIR  = "/app/input"
 GRAHAM_PIC = "graham.png"
+GRAHAM_PIC2 = "graham2.jpg"
 
 # ── Model & Client Initialization ────────────────────────────────────
 @st.cache_resource
@@ -77,10 +78,13 @@ with st.expander("Search Controls", expanded=True):
 if search_btn:
     # Determine reference images
     refs = []
-    if use_graham and os.path.exists(GRAHAM_PIC):
-        refs = [GRAHAM_PIC]
-    elif uploads:
+    if uploads:
         refs = uploads
+    elif use_graham:
+        if os.path.exists(GRAHAM_PIC):
+            refs.append(GRAHAM_PIC)
+        if os.path.exists(GRAHAM_PIC2):
+            refs.append(GRAHAM_PIC2)
 
     if not refs:
         st.warning("Please select or upload a reference image.")
