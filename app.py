@@ -64,10 +64,15 @@ def create_zip_in_memory(points):
 st.set_page_config(layout="wide")
 st.title("👨‍👩‍👧‍👦 Find a Person")
 
+# Check for query params to trigger an auto-search
+params = st.query_params
+search_on_load = params.get("search") == "graham"
+expander_state = not search_on_load
+
 # Controls are moved out of the sidebar and into an expander for better mobile UI
-with st.expander("Search Controls", expanded=True):
+with st.expander("Search Controls", expanded=expander_state):
     st.markdown("### Reference Image")
-    use_graham = st.checkbox("Use Graham's Pic")
+    use_graham = st.checkbox("Use Graham's Pic", value=search_on_load)
     uploads    = st.file_uploader("Or upload your own", type=["jpg", "png"], accept_multiple_files=True)
     
     st.markdown("### Search Parameters")
@@ -75,12 +80,12 @@ with st.expander("Search Controls", expanded=True):
     search_btn = st.button("Search", use_container_width=True)
 
 # ── Search Logic ─────────────────────────────────────────────────────
-if search_btn:
+if search_btn or search_on_load:
     # Determine reference images
     refs = []
-    if uploads:
+    if uploads and not search_on_load:
         refs = uploads
-    elif use_graham:
+    elif use_graham or search_on_load:
         if os.path.exists(GRAHAM_PIC):
             refs.append(GRAHAM_PIC)
         if os.path.exists(GRAHAM_PIC2):
@@ -128,6 +133,10 @@ if search_btn:
         
         # Now len(points) will work correctly on the list
         st.success(f"🎉 Found {len(points)} potential matches!")
+
+        # Clear query params after auto-search to prevent re-triggering
+        if search_on_load:
+            st.query_params.clear()
 
 
 # ── Results Display ───────────────────────────────────────────────────
