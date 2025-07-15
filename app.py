@@ -62,7 +62,7 @@ def create_zip_in_memory(points):
 
 # ── Streamlit App UI ─────────────────────────────────────────────────
 st.set_page_config(layout="wide")
-st.title("👨‍👩‍👧‍👦 Find a Person")
+st.title("Find a Swab")
 
 # Check for query params to trigger an auto-search
 params = st.query_params
