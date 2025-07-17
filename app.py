@@ -63,6 +63,12 @@ def create_zip_in_memory(points):
 # ── Streamlit App UI ─────────────────────────────────────────────────
 st.set_page_config(layout="wide")
 st.title("Find a Swab")
+# Button to download the full face archive (served separately via Caddy as /pduddy.tar.gz)
+st.markdown(
+    '<a href="/pduddy.tar.gz" target="_blank">'
+    '<button>Download Full Archive</button></a>',
+    unsafe_allow_html=True,
+)
 
 # Check for query params to trigger an auto-search
 params = st.query_params
