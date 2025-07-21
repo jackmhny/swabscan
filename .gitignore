@@ -1,2 +1,5 @@
 output/
 qdrant_data/
+input/
+qdrant_backup.tar
+client_secret.json

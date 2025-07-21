@@ -4,9 +4,9 @@ import os
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import VectorParams, PointStruct, Distance
 
-SRC = "input/*.jpg"
+SRC = "input/*"
 COLL = "fb_faces"
-REMOTE = "http://lgheadcutoff.tail951634.ts.net:6333"
+REMOTE = "http://qdrant:6333"
 
 # 1. init
 model  = insightface.app.FaceAnalysis(name="buffalo_l")

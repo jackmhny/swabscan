@@ -14,14 +14,13 @@ services:
     ports:
       - "8501:8501"
     environment:
+      # Use the Docker service name to connect
       QDRANT_URL: "http://qdrant:6333"
     volumes:
-      # mount your PDuddy download folder read-only
-      - /mnt/ssd2/pduddy:/app/input:ro
+      - ./input:/app/input:ro
       - .:/app
     depends_on:
       - qdrant
 
 volumes:
   qdrant_data:
-
