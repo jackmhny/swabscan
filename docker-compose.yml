@@ -14,7 +14,6 @@ services:
     ports:
       - "8501:8501"
     environment:
-      # Use the Docker service name to connect
       QDRANT_URL: "http://qdrant:6333"
     volumes:
       - ./input:/app/input:ro

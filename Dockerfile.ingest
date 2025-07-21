@@ -16,7 +16,6 @@ COPY requirements.txt .
 # Install the GPU version of onnxruntime
 RUN sed -i 's/onnxruntime/onnxruntime-gpu/' requirements.txt
 
-# RUN python3 -m pip install --no-cache-dir --upgrade pip --break-system-packages
 RUN python3 -m pip install --no-cache-dir -r requirements.txt --break-system-packages
 
 COPY . .

@@ -1,0 +1,1 @@
+docker run --rm --gpus all --network swabscan_default -v $(pwd)/input:/app/input:ro swabscan-ingest

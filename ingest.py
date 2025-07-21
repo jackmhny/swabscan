@@ -1,4 +1,3 @@
-# script to be ran on workstation with GPU to ingest to qdrant on remote server
 import glob, cv2, numpy as np, insightface
 import os
 from qdrant_client import QdrantClient
@@ -6,14 +5,14 @@ from qdrant_client.http.models import VectorParams, PointStruct, Distance
 
 SRC = "input/*"
 COLL = "fb_faces"
-REMOTE = "http://qdrant:6333"
+QDRANT_URL = "http://qdrant:6333"
 
 # 1. init
 model  = insightface.app.FaceAnalysis(name="buffalo_l")
 model.prepare(ctx_id=0, det_size=(640,640))
-client = QdrantClient(url=REMOTE)
+client = QdrantClient(url=QDRANT_URL)
 
-# 2. recreate on remote
+# 2. recreate on qdrant 
 client.recreate_collection(
     collection_name=COLL,
     vectors_config=VectorParams(size=512, distance=Distance.COSINE),
@@ -35,5 +34,5 @@ for path in glob.glob(SRC, recursive=True):
 if batch:
     client.upsert(collection_name=COLL, points=batch)
 
-print(f"Ingested {idx} faces → {REMOTE}/{COLL}")
+print(f"Ingested {idx} faces → {QDRANT_URL}/{COLL}")
 
